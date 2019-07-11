@@ -1,0 +1,5 @@
+set(CMAKE_CXX_STANDARD 17)
+add_subdirectory(swapcontext)
+file(GLOB YURCO_SOURCES "*.cpp" "*.hpp")
+add_library(yurco EXCLUDE_FROM_ALL ${YURCO_SOURCES})
+target_link_libraries(yurco swapcontext unistd)

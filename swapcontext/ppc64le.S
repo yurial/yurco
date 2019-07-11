@@ -1,0 +1,366 @@
+.section    ".toc","aw"
+.LC__dl_hwcap:
+    .tc _rtld_global_ro[TC],_rtld_global_ro
+
+    .section    ".text";
+    .globl      swapcontext_fast;
+    .type       swapcontext_fast,@function;
+    .align 2;
+
+yurco_swapcontext:
+1:      addis   2,12,.TOC.-1b@ha;
+        addi    2,2,.TOC.-1b@l;
+        .localentry yurco_swapcontext,.-yurco_swapcontext;
+
+    std     0,232(3)
+    std     1,240(3)
+    mflr    0
+    std     31,-8(1)
+    std     2,248(3)
+    std     0,16(1)
+    std     0,520(3)
+    std     0,488(3)
+    stdu    1,-128(1)
+    std     4,264(3)
+    std     5,272(3)
+    std     6,280(3)
+    std     7,288(3)
+    std     8,296(3)
+    std     9,304(3)
+    std     10,312(3)
+    std     11,320(3)
+    std     12,328(3)
+    std     13,336(3)
+    std     14,344(3)
+    std     15,352(3)
+    std     16,360(3)
+    std     17,368(3)
+    std     18,376(3)
+    std     19,384(3)
+    std     20,392(3)
+    std     21,400(3)
+    std     22,408(3)
+    std     23,416(3)
+    std     24,424(3)
+    std     25,432(3)
+    std     26,440(3)
+    std     27,448(3)
+    std     28,456(3)
+    std     29,464(3)
+    std     30,472(3)
+    std     31,480(3)
+
+    mfctr   0
+    std     0,512(3)
+    mfxer   0
+    std     0,528(3)
+    mfcr    0
+    std     0,536(3)
+    li      0,0
+    std     0,256(3)
+    std     0,496(3)
+    std     0,504(3)
+    std     0,544(3)
+    std     0,552(3)
+    std     0,560(3)
+    std     0,568(3)
+    std     0,576(3)
+    addi    0,3,232
+    std     0,224(3)
+
+/* floating point save */
+    stfd    0,616(3)
+    stfd    1,624(3)
+    stfd    2,632(3)
+    stfd    3,640(3)
+    stfd    4,648(3)
+    stfd    5,656(3)
+    stfd    6,664(3)
+    stfd    7,672(3)
+    stfd    8,680(3)
+    stfd    9,688(3)
+    stfd    10,696(3)
+    stfd    11,704(3)
+    stfd    12,712(3)
+    stfd    13,720(3)
+    stfd    14,728(3)
+    stfd    15,736(3)
+    stfd    16,744(3)
+    stfd    17,752(3)
+    stfd    18,760(3)
+    stfd    19,768(3)
+    stfd    20,776(3)
+    stfd    21,784(3)
+    stfd    22,792(3)
+    stfd    23,800(3)
+    stfd    24,808(3)
+    stfd    25,816(3)
+    stfd    26,824(3)
+    stfd    27,832(3)
+    stfd    28,840(3)
+    stfd    29,848(3)
+    mffs    0
+    stfd    30,856(3)
+    stfd    31,864(3)
+    stfd    0,872(3)
+
+/* vmx register save */
+    ld    8,.LC__dl_hwcap@toc(2)
+    /* ld    r8,RTLD_GLOBAL_RO_DL_HWCAP_OFFSET(r8) */
+    ld    8,88(8)
+    addi    10,3,896
+    addi    9,3,912
+    andis.  6,8,4096
+    rldicr  10,10,0,59
+    beq Lhas_no_vec
+
+    rldicr  9,9,0,59
+    mr      8,10
+    stvx    0,0,10
+    stvx    1,0,9
+    addi    10,10,32
+    addi    9,9,32
+    stvx    2,0,10
+    stvx    3,0,9
+    addi    10,10,32
+    addi    9,9,32
+    stvx    4,0,10
+    stvx    5,0,9
+    addi    10,10,32
+    addi    9,9,32
+    stvx    6,0,10
+    stvx    7,0,9
+    addi    10,10,32
+    addi    9,9,32
+    stvx    8,0,10
+    stvx    9,0,9
+    addi    10,10,32
+    addi    9,9,32
+    stvx    10,0,10
+    stvx    11,0,9
+    addi    10,10,32
+    addi    9,9,32
+    stvx    12,0,10
+    stvx    13,0,9
+    addi    10,10,32
+    addi    9,9,32
+    stvx    14,0,10
+    stvx    15,0,9
+    addi    10,10,32
+    addi    9,9,32
+    stvx    16,0,10
+    stvx    17,0,9
+    addi    10,10,32
+    addi    9,9,32
+    stvx    18,0,10
+    stvx    19,0,9
+    addi    10,10,32
+    addi    9,9,32
+    stvx    20,0,10
+    stvx    21,0,9
+    addi    10,10,32
+    addi    9,9,32
+    stvx    22,0,10
+    stvx    23,0,9
+    addi    10,10,32
+    addi    9,9,32
+    stvx    24,0,10
+    stvx    25,0,9
+    addi    10,10,32
+    addi    9,9,32
+    stvx    26,0,10
+    stvx    27,0,9
+    addi    10,10,32
+    addi    9,9,32
+    stvx    28,0,10
+    stvx    29,0,9
+    addi    10,10,32
+    addi    9,9,32
+    stvx    30,0,10
+    stvx    31,0,9
+    addi    10,10,32
+    addi    9,9,32
+    mfvscr  0
+    mfvrsave 0
+    stvx    0,0,10
+    stw     0,0(9)
+
+Lhas_no_vec:
+    #/ std   r8,(SIGCONTEXT_V_REGS_PTR)(r3)
+    std     8,880(3)
+
+/* sigprocmask and error code path stripped */
+
+/* start of the actual swap */
+
+    mr      31,4
+
+    ld    8,.LC__dl_hwcap@toc(2)
+    ld    10,880(31)
+    /* ld    r8,RTLD_GLOBAL_RO_DL_HWCAP_OFFSET(r8) */
+    ld    8,88(8)
+    andis.  6,8,4096
+    beq   Lhas_no_vec2
+
+    cmpdi 10,0
+    beq   Lhas_no_vec2
+    lwz   0,(33*16)(10)
+
+    li    r9,(16*32)
+    mtvrsave 0
+    cmpwi 0,0
+    beq   Lhas_no_vec2
+
+/* swap of vmx */
+
+    lvx     19,9,10
+    addi    9,10,16
+    lvx     0,0,10
+    lvx     1,0,9
+    addi    10,10,32
+    addi    9,9,32
+    mtvscr  19
+    lvx     2,0,10
+    lvx     3,0,9
+    addi    10,10,32
+    addi    9,9,32
+    lvx     4,0,10
+    lvx     5,0,9
+    addi    10,10,32
+    addi    9,9,32
+    lvx     6,0,10
+    lvx     7,0,9
+    addi    10,10,32
+    addi    9,9,32
+    lvx     8,0,10
+    lvx     9,0,9
+    addi    10,10,32
+    addi    9,9,32
+    lvx     10,0,10
+    lvx     11,0,9
+    addi    10,10,32
+    addi    9,9,32
+    lvx     12,0,10
+    lvx     13,0,9
+    addi    10,10,32
+    addi    9,9,32
+    lvx     14,0,10
+    lvx     15,0,9
+    addi    10,10,32
+    addi    9,9,32
+    lvx     16,0,10
+    lvx     17,0,9
+    addi    10,10,32
+    addi    9,9,32
+    lvx     18,0,10
+    lvx     19,0,9
+    addi    10,10,32
+    addi    9,9,32
+    lvx     20,0,10
+    lvx     21,0,9
+    addi    10,10,32
+    addi    9,9,32
+    lvx     22,0,10
+    lvx     23,0,9
+    addi    10,10,32
+    addi    9,9,32
+    lvx     24,0,10
+    lvx     25,0,9
+    addi    10,10,32
+    addi    9,9,32
+    lvx     26,0,10
+    lvx     27,0,9
+    addi    10,10,32
+    addi    9,9,32
+    lvx     28,0,10
+    lvx     29,0,9
+    addi    10,10,32
+    addi    9,9,32
+    lvx     30,0,10
+    lvx     31,0,9
+    addi    10,10,32
+    addi    9,9,32
+    lvx     10,0,10
+    lvx     11,0,9
+    addi    10,10,32
+    addi    9,9,32
+
+/* swap of fp */
+Lhas_no_vec2:
+    lfd     0,872(31)
+    lfd     31,864(31)
+    lfd     30,856(31)
+    mtfsf   255,0,1,0
+    lfd     29,848(31)
+    lfd     28,840(31)
+    lfd     27,832(31)
+    lfd     26,824(31)
+    lfd     25,816(31)
+    lfd     24,808(31)
+    lfd     23,800(31)
+    lfd     22,792(31)
+    lfd     21,784(31)
+    lfd     20,776(31)
+    lfd     19,768(31)
+    lfd     18,760(31)
+    lfd     17,752(31)
+    lfd     16,744(31)
+    lfd     15,736(31)
+    lfd     14,728(31)
+    lfd     13,720(31)
+    lfd     12,712(31)
+    lfd     11,704(31)
+    lfd     10,696(31)
+    lfd     9,688(31)
+    lfd     8,680(31)
+    lfd     7,672(31)
+    lfd     6,664(31)
+    lfd     5,656(31)
+    lfd     4,648(31)
+    lfd     3,640(31)
+    lfd     2,632(31)
+    lfd     1,624(31)
+    lfd     0,616(31)
+
+/* swap of GPRs */
+    ld      0,520(31)
+    ld      1,240(31)
+    mtlr    0
+    ld      2,248(31)
+    ld      0,528(31)
+    ld      3,256(31)
+    mtxer   0
+    ld      4,264(31)
+    ld      0,536(31)
+    ld      5,272(31)
+    ld      6,280(31)
+    ld      7,288(31)
+    ld      8,296(31)
+    ld      9,304(31)
+    mtcr    0
+    ld      10,312(31)
+    ld      11,320(31)
+    ld      12,328(31)
+    ld      14,344(31)
+    ld      15,352(31)
+    ld      16,360(31)
+    ld      17,368(31)
+    ld      18,376(31)
+    ld      19,384(31)
+    ld      20,392(31)
+    ld      21,400(31)
+    ld      22,408(31)
+    ld      23,416(31)
+    ld      24,424(31)
+    ld      25,432(31)
+    ld      26,440(31)
+    ld      27,448(31)
+    ld      28,456(31)
+    ld      29,464(31)
+    ld      30,472(31)
+    ld      0,488(31)
+    mtctr   0
+    ld      0,232(31)
+    ld      31,480(31)
+    bctr
+

@@ -1,0 +1,51 @@
+YurCO - Yurial's coroutines.
+
+Little epoll-reactor based on libc coroutines.
+
+class Stack // single stack for coroutine
+{
+        Stack(size_t size, bool protect=true);  // size - size of stack without size of stack protect-pages,
+                                                // protect - create two protect-pages (at begin and at end of stack area).
+
+char*   data() const noexcept;                  // address of begin stack area
+size_t  size() const noexcept;                  // size of stack area
+};
+
+
+class StackPool // pool of stacks
+{
+        StackPool(const size_t stack_size, bool protect=true);  // arguments passed to Stack() contructor
+Stack   pop();                                                  // pop one Stack from pool or create new
+void    push(Stack&& stack);                                    // push Stack to pool;
+};
+
+
+class Coroutine // single coroutine
+{
+template <class Func, class... Args, typename = typename std::enable_if<std::is_invocable_r_v<void, Func, Coroutine&, Args&...>>::type>
+        Coroutine(Stack&& stack, Func&& func, Args&&... args) noexcept; // create a new Coroutine
+bool    is_completed() const noexcept;                                  // true when the coroutine is completely completed
+bool    is_running() const noexcept;                                    // coroutine now in progress
+void    yield();                                                        // switch to called thread
+void    operator() ();                                                  // switch to coroutine
+void    operator() (const std::nothrow_t&) noexcept;                    // --//--
+void    set_exception(const std::exception_ptr& e) noexcept;            // set exception to send to or from coroutine
+                                                                        // exception raised at end of operator() or yield() call
+const std::exception_ptr& get_exception() const noexcept;               // inspect current exception
+void    rethrow();                                                      // throw exception, if possible
+Stack&& take_away_stack() noexcept;                                     // take stack from coroutine. 
+                                                                        // used to store stack in pool, before coroutine deleted.
+};
+
+
+class Reactor // epoll reactor
+{
+        Reactor(const size_t stack_size, bool protect_stack=true) noexcept;             // arguments passed to StackPool
+void    coroutine(Func&& func, Args&&... args) noexcept;                                // create new coroutine, arguments passed to Coroutine()
+void    run(const size_t batch_size=16, const size_t events_at_once=32*1024) noexcept;  // run reactor, execute coroutines
+void    terminate() noexcept;                                                           // terminate coroutines and exit from run()
+void    suspend(Coroutine& coro, yurco::fd& fd, int events);                            // suspend coroutine while events on fd not occour
+                                                                                        // this method useful for epoll-handled filr descriptors
+void    close(unistd::fd::native_type fd);                                              // remove file descriptor from epoll and close
+int     close(unistd::fd::native_type fd, const std::nothrow_t&) noexcept;              // --//--
+};
