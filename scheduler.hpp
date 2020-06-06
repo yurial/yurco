@@ -5,6 +5,7 @@
 #include "stack.hpp"
 
 #include <list>
+#include <atomic>
 
 /*
 available state changes,    locks
@@ -44,7 +45,7 @@ using coroutine_container = std::list<coro_data>;
 using coroutine_iterator = coroutine_container::iterator;
 using index_container = std::unordered_map<Coroutine*,coroutine_iterator>;
 
-        SimpleScheduler(const size_t stack_size, const bool protect_stack) noexcept;
+        SimpleScheduler(std::atomic<bool>& terminate, const size_t stack_size, const bool protect_stack) noexcept;
 template <class Func, class... Args>
 void    coroutine(Func&& func, Args&&... args) noexcept;
 
@@ -59,7 +60,7 @@ void    resume_many(std::vector<Coroutine*>& coros) noexcept;
 void    suspend(Coroutine& coro) noexcept;
 
 protected:
-bool                m_terminate = false;
+std::atomic<bool>&  m_terminate;
 StackPool           m_stack_pool;
 index_container     m_coroutine_index;
 coroutine_container m_ready;

@@ -4,7 +4,8 @@
 namespace yurco
 {
 
-SimpleScheduler::SimpleScheduler(const size_t stack_size, const bool protect_stack) noexcept:
+SimpleScheduler::SimpleScheduler(std::atomic<bool>& terminate, const size_t stack_size, const bool protect_stack) noexcept:
+        m_terminate(terminate),
         m_stack_pool(stack_size, protect_stack)
     {
     }
@@ -47,7 +48,7 @@ bool SimpleScheduler::try_execute_one() noexcept
 
     coro_it->want_suspend = false;
     coro_it->skip_suspend = false;
-    if (m_terminate)
+    if (m_terminate.load(std::memory_order_relaxed))
         coro_it->coro.set_exception(make_exception_ptr(terminate_exception()));
     coro_it->coro(std::nothrow);
 
@@ -75,7 +76,6 @@ bool SimpleScheduler::try_execute_one() noexcept
 
 void SimpleScheduler::terminate() noexcept
     {
-    m_terminate = true;
     m_ready_mutex.lock();
     m_suspended_mutex.lock();
     for (auto coro_it = m_suspended.begin(); coro_it != m_suspended.end();)

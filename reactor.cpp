@@ -31,7 +31,7 @@ size_t epoll_wait_retry(int epollfd, std::vector<epoll_event>& events, int timeo
 Reactor::Reactor(const size_t stack_size, const bool protect_stack) noexcept:
         m_epoll_wakeup(unistd::fd::nodup(unistd::eventfd(0, EFD_NONBLOCK))),
         m_epollfd(unistd::fd::nodup(unistd::epoll_create())),
-        m_scheduler(stack_size, protect_stack)
+        m_scheduler(m_terminate, stack_size, protect_stack)
     {
     const int events = EPOLLIN;
     m_fds.emplace(std::piecewise_construct,
@@ -46,21 +46,22 @@ void Reactor::run(const size_t batch_size, const size_t events_at_once) noexcept
     std::vector<epoll_event> events(events_at_once);
     std::vector<Coroutine*> ready;
     ready.reserve(events_at_once);
-    m_terminate = false;
+    m_terminate.store(false, std::memory_order_relaxed);
     eventfd_t wakeup_value = 0;
     ::eventfd_read(m_epoll_wakeup, &wakeup_value);
     yurco::set_reactor(*this);
     for (;;)
         {
         bool has_ready = process_ready(batch_size);
-        if (m_terminate && m_scheduler.has_suspended())
+        const bool terminate = m_terminate.load(std::memory_order_relaxed);
+        if (terminate && m_scheduler.has_suspended())
             {
             m_scheduler.terminate();
             has_ready = m_scheduler.has_ready();
             }
-        else if (m_terminate && !has_ready)
+        else if (terminate && !has_ready)
             return;
-        else if (m_terminate)
+        else if (terminate)
             continue;
         else if (process_epoll(events, ready, has_ready))
             continue;
@@ -97,7 +98,7 @@ bool Reactor::process_epoll(std::vector<epoll_event>& events, std::vector<Corout
     // wait events
     const size_t nevents = epoll_wait_retry(m_epollfd, events, timeout);
     m_epoll_mutex.unlock();
-    if (m_terminate)
+    if (m_terminate.load(std::memory_order_relaxed))
         return true;
     if (nevents == 0)
         return true;
@@ -120,7 +121,7 @@ bool Reactor::process_epoll(std::vector<epoll_event>& events, std::vector<Corout
 
 void Reactor::terminate() noexcept
     {
-    m_terminate = true;
+    m_terminate.store(true, std::memory_order_relaxed);
     m_scheduler.terminate();
     unistd::eventfd_write(m_epoll_wakeup, 1);
     }
