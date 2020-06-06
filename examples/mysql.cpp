@@ -18,6 +18,8 @@ void process_connection(unistd::fd& fd)
     {
     try
         {
+        char buf[100];
+        unistd::read(fd, buf, sizeof(buf));
         /* Create a connection */
         std::unique_ptr<MYSQL, std::function<decltype(mysql_close)>> con(mysql_init(nullptr), mysql_close);
         mysql_real_connect(con.get(), "db.local", "ro", "", nullptr, 0, nullptr, 0);
