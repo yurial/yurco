@@ -49,7 +49,7 @@ bool SimpleScheduler::try_execute_one() noexcept
     coro_it->want_suspend = false;
     coro_it->skip_suspend = false;
     if (m_terminate.load(std::memory_order_relaxed))
-        coro_it->coro.set_exception(make_exception_ptr(terminate_exception()));
+        coro_it->coro.set_exception(std::make_exception_ptr(terminate_exception()));
     coro_it->coro(std::nothrow);
 
     if (coro_it->coro.is_completed())
@@ -74,7 +74,7 @@ bool SimpleScheduler::try_execute_one() noexcept
     return true;
     }
 
-void SimpleScheduler::terminate() noexcept
+void SimpleScheduler::resume_all() noexcept
     {
     m_ready_mutex.lock();
     m_suspended_mutex.lock();
