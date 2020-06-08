@@ -56,7 +56,7 @@ void Reactor::run(const size_t batch_size, const size_t events_at_once) noexcept
         const bool terminate = m_terminate.load(std::memory_order_relaxed);
         if (terminate && m_scheduler.has_suspended())
             {
-            m_scheduler.terminate();
+            m_scheduler.resume_all();
             has_ready = m_scheduler.has_ready();
             }
         else if (terminate && !has_ready)
@@ -122,7 +122,7 @@ bool Reactor::process_epoll(std::vector<epoll_event>& events, std::vector<Corout
 void Reactor::terminate() noexcept
     {
     m_terminate.store(true, std::memory_order_relaxed);
-    m_scheduler.terminate();
+    m_scheduler.resume_all();
     unistd::eventfd_write(m_epoll_wakeup, 1);
     }
 

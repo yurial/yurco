@@ -52,9 +52,8 @@ void    coroutine(Func&& func, Args&&... args) noexcept;
 inline  bool    has_ready() noexcept;
 inline  bool    has_suspended() noexcept;
 
-void    terminate() noexcept;
-
 bool    try_execute_one() noexcept;
+void    resume_all() noexcept;
 void    resume(Coroutine& coro) noexcept;
 void    resume_many(std::vector<Coroutine*>& coros) noexcept;
 void    suspend(Coroutine& coro) noexcept;
