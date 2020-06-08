@@ -14,8 +14,8 @@ class Coroutine;
 __inline__  void        init(const size_t stack_size, const bool protect_stack) noexcept {}
 __inline__  void        set_reactor(Reactor& reactor) noexcept {}
 __inline__  void        set_coroutine(Coroutine& coro) noexcept {}
-__inline__  Reactor&    get_reactor() noexcept { abort(); }
-__inline__  Coroutine&  get_coroutine() noexcept { abort(); }
+__inline__  Reactor&    get_reactor() noexcept {}
+__inline__  Coroutine&  get_coroutine() noexcept {}
 
 } // namespace yurco
 
