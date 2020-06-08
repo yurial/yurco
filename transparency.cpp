@@ -1,5 +1,7 @@
 #include "transparency.hpp"
 
+#ifdef YURCO_TRANSPARENCY
+
 extern "C"
 {
 int __wrap_close(int fd) { return yurco::close(std::nothrow, yurco::get_reactor(), fd); }
@@ -15,4 +17,6 @@ ssize_t __wrap_send(int sockfd, const void* msg, size_t len, int flags) { return
 ssize_t __wrap_sendto(int sockfd, const void* msg, size_t len, int flags, const struct sockaddr* to, socklen_t tolen) { return yurco::sendto(std::nothrow, yurco::get_reactor(), yurco::get_coroutine(), sockfd, msg, len, flags, to, tolen); }
 ssize_t __wrap_sendmsg(int sockfd, const struct msghdr* msg, int flags) { return yurco::sendmsg(std::nothrow, yurco::get_reactor(), yurco::get_coroutine(), sockfd, msg, flags); }
 } // extern "C"
+
+#endif
 
