@@ -4,6 +4,8 @@
 
 #ifndef YURCO_TRANSPARENCY
 
+#include <stdlib.h>
+
 namespace yurco
 {
 class Reactor;
