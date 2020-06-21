@@ -11,20 +11,19 @@
 namespace yurco
 {
 
-size_t epoll_wait_retry(int epollfd, std::vector<epoll_event>& events, int timeout) noexcept
+size_t epoll_wait_retry(int epollfd, std::vector<epoll_event>& events, int timeout)
     {
     for (;;)
         {
-        try
+        const int nevents = ::__real_epoll_wait(epollfd, events.data(), events.size(), timeout);
+        if (-1 == nevents)
             {
-            return unistd::epoll_wait(epollfd, events.data(), events.size(), timeout);
+            if (EINTR == errno)
+                continue;
+            else
+                throw std::system_error(errno, std::system_category(), "epoll_wait");
             }
-        catch (const std::system_error& e)
-            {
-            if (e.code().value() == EINTR)
-                return 0;
-            throw;
-            }
+        return nevents;
         }
     }
 
@@ -109,7 +108,7 @@ bool Reactor::process_epoll(std::vector<epoll_event>& events, std::vector<Corout
             {
             const auto& event = events[i];
             const fd_data& data = m_fds[event.data.fd];
-            if (!data.coro) // coro yield without awaiting events, just skip
+            if (!data.coro) // no coro to resume
                 continue;
             ready.push_back(data.coro);
             }

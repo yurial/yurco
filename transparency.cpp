@@ -4,6 +4,13 @@
 
 extern "C"
 {
+int __wrap_select(int nfds, fd_set* readfds, fd_set* writefds, fd_set* exceptfds, struct timeval* timeout) { return yurco::select(std::nothrow, *yurco::get_reactor(), *yurco::get_coroutine(), nfds, readfds, writefds, exceptfds, timeout); }
+int __wrap_pselect(int nfds, fd_set* readfds, fd_set* writefds, fd_set* exceptfds, const struct timespec* timeout, const sigset_t* sigmask) { return yurco::pselect(std::nothrow, *yurco::get_reactor(), *yurco::get_coroutine(), nfds, readfds, writefds, exceptfds, timeout, sigmask); }
+int __wrap_poll(struct pollfd* fds, nfds_t nfds, int timeout)  { return yurco::poll(std::nothrow, *yurco::get_reactor(), *yurco::get_coroutine(), fds, nfds, timeout); }
+int __wrap_ppoll(struct pollfd* fds, nfds_t nfds, const struct timespec* tmo_p, const sigset_t* sigmask) { return yurco::ppoll(std::nothrow, *yurco::get_reactor(), *yurco::get_coroutine(), fds, nfds, tmo_p, sigmask); }
+int __wrap_epoll_wait(int epfd, struct epoll_event* events, int maxevents, int timeout) { return yurco::epoll_wait(std::nothrow, *yurco::get_reactor(), *yurco::get_coroutine(), epfd, events, maxevents, timeout ); }
+int __wrap_epoll_pwait(int epfd, struct epoll_event* events, int maxevents, int timeout, const sigset_t* sigmask) { return yurco::epoll_pwait(std::nothrow, *yurco::get_reactor(), *yurco::get_coroutine(), epfd, events, maxevents, timeout, sigmask ); }
+
 int __wrap_close(int fd) { return yurco::close(std::nothrow, *yurco::get_reactor(), fd); }
 ssize_t __wrap_read(int fd, void* buf, size_t count) { return yurco::read(std::nothrow, *yurco::get_reactor(), *yurco::get_coroutine(), fd, buf, count); }
 ssize_t __wrap_write(int fd, const void* buf, size_t count) { return yurco::write(std::nothrow, *yurco::get_reactor(), *yurco::get_coroutine(), fd, buf, count); }

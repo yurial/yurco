@@ -1,10 +1,97 @@
 #include "operations.hpp"
 #include "transparency.hpp"
 #include <unistd/epoll.hpp>
+#include <unordered_map>
 #include <system_error>
 
 namespace yurco
 {
+int select(const std::nothrow_t&, Reactor& reactor, Coroutine& coro, int nfds, fd_set* readfds, fd_set* writefds, fd_set* exceptfds, const struct timeval* const timeout)
+    {
+    const struct timespec ts{timeout->tv_sec, timeout->tv_usec};
+    return pselect(std::nothrow, reactor, coro, nfds, readfds, writefds, exceptfds, &ts, nullptr);
+    }
+
+int pselect(const std::nothrow_t&, Reactor& reactor, Coroutine& coro, int nfds, fd_set* readfds, fd_set* writefds, fd_set* exceptfds, const struct timespec* const timeout, const sigset_t* const sigmask)
+    {
+    //TODO:
+    }
+
+int poll(const std::nothrow_t&, Reactor& reactor, Coroutine& coro, struct pollfd* fds, nfds_t nfds, int timeout)
+    {
+    const struct timespec ts{timeout/1000, (timeout%1000)*1000000L};
+    return ppoll(std::nothrow, reactor, coro, fds, nfds, &ts, nullptr);
+    }
+
+int poll2epoll_event(int poll_events)
+    {
+    int events = 0;
+    if (poll_events & POLLIN)
+        events |= EPOLLIN;
+    if (poll_events & POLLOUT)
+        events |= EPOLLOUT;
+    if (poll_events & POLLPRI)
+        events |= EPOLLPRI;
+    if (poll_events & POLLRDHUP)
+        events |= EPOLLRDHUP;
+    if (poll_events & POLLERR)
+        events |= EPOLLERR;
+    if (poll_events & POLLHUP)
+        events |= EPOLLHUP;
+    if (poll_events & POLLRDNORM)
+        events |= EPOLLRDNORM;
+    if (poll_events & POLLRDBAND)
+        events |= EPOLLRDBAND;
+    if (poll_events & POLLWRNORM)
+        events |= EPOLLWRNORM;
+    if (poll_events & POLLWRBAND)
+        events |= EPOLLWRBAND;
+    return events;
+    }
+
+int ppoll(const std::nothrow_t&, Reactor& reactor, Coroutine& coro, struct pollfd* fds, nfds_t nfds, const struct timespec* const tmo_p, const sigset_t* const sigmask)
+    {
+    const int timeout = (tmo_p == nullptr)? -1 : (tmo_p->tv_sec * 1000 + tmo_p->tv_nsec / 1000000);
+    std::unordered_map<int, pollfd*> index; // fd -> pollfd*
+    index.reserve(nfds);
+    unistd::fd epfd = unistd::fd::nodup(unistd::epoll_create());
+    for (nfds_t i = 0; i < nfds; ++i)
+        {
+        const int fd = fds[i].fd;
+        const int orig_events = fds[i].events;
+        index[fd] = &fds[i];
+        unistd::epoll_add(epfd, fd, fds[i].events, fd);
+        //if (poll_events & POLLNVAL) //TODO:
+        }
+    std::vector<epoll_event> events(nfds);
+    const int nready = epoll_pwait(std::nothrow, reactor, coro, epfd, events.data(), events.size(), timeout, sigmask);
+    for (size_t i = 0; i < nready; ++i)
+        {
+        const auto& event = events[i];
+        index[event.data.fd]->revents = event.events;
+        }
+    epfd.close(std::nothrow);
+    return nready;
+    }
+
+int epoll_wait(const std::nothrow_t&, Reactor& reactor, Coroutine& coro, int epfd, struct epoll_event* const events, const int maxevents, const int timeout)
+    {
+    return epoll_pwait(std::nothrow, reactor, coro, epfd, events, maxevents, timeout, nullptr);
+    }
+
+int epoll_pwait(const std::nothrow_t&, Reactor& reactor, Coroutine& coro, int epfd, struct epoll_event* const events, const int maxevents, const int timeout, const sigset_t* const /*sigmask*/)
+    {
+    for (;;)
+        {
+        const int nevents = ::__real_epoll_wait(epfd, events, maxevents, 0); // timeout=0 equal NONBLOCK
+        if (0 == nevents)
+            {
+            reactor.suspend(coro, epfd, EPOLLIN); // TODO: timeout
+            continue;
+            }
+        return nevents;
+        }
+    }
 
 int close(const std::nothrow_t&, Reactor& reactor, const int fd) noexcept
     {
@@ -162,6 +249,54 @@ ssize_t sendmsg(const std::nothrow_t&, Reactor& reactor, Coroutine& coro, int fd
             }
         return ret;
         }
+    }
+
+int select(Reactor& reactor, Coroutine& coro, int nfds, fd_set* readfds, fd_set* writefds, fd_set* exceptfds, const struct timeval* const timeout)
+    {
+    const int nready = select(std::nothrow, reactor, coro, nfds, readfds, writefds, exceptfds, timeout);
+    if (-1 == nready)
+        throw std::system_error(errno, std::system_category(), "select");
+    return nready;
+    }
+
+int pselect(Reactor& reactor, Coroutine& coro, int nfds, fd_set* readfds, fd_set* writefds, fd_set* exceptfds, const struct timespec* const timeout, const sigset_t* const sigmask)
+    {
+    const int nready = pselect(std::nothrow, reactor, coro, nfds, readfds, writefds, exceptfds, timeout, sigmask);
+    if (-1 == nready)
+        throw std::system_error(errno, std::system_category(), "pselect");
+    return nready;
+    }
+
+int poll(Reactor& reactor, Coroutine& coro, struct pollfd* fds, nfds_t nfds, int timeout)
+    {
+    const int nready = poll(std::nothrow, reactor, coro, fds, nfds, timeout);
+    if (-1 == nready)
+        throw std::system_error(errno, std::system_category(), "poll");
+    return nready;
+    }
+
+int ppoll(Reactor& reactor, Coroutine& coro, struct pollfd* fds, nfds_t nfds, const struct timespec* const tmo_p, const sigset_t* const sigmask)
+    {
+    const int nready = ppoll(std::nothrow, reactor, coro, fds, nfds, tmo_p, sigmask);
+    if (-1 == nready)
+        throw std::system_error(errno, std::system_category(), "ppoll");
+    return nready;
+    }
+
+int epoll_wait(Reactor& reactor, Coroutine& coro, int epfd, struct epoll_event* const events, const int maxevents, const int timeout)
+    {
+    const int nevents = epoll_wait(std::nothrow, reactor, coro, epfd, events, maxevents, timeout);
+    if (-1 == nevents)
+        throw std::system_error(errno, std::system_category(), "epoll_wait");
+    return nevents;
+    }
+
+int epoll_pwait(Reactor& reactor, Coroutine& coro, int epfd, struct epoll_event* const events, const int maxevents, const int timeout, const sigset_t* const sigmask)
+    {
+    const int nevents = epoll_pwait(std::nothrow, reactor, coro, epfd, events, maxevents, timeout, sigmask);
+    if (-1 == nevents)
+        throw std::system_error(errno, std::system_category(), "epoll_pwait");
+    return nevents;
     }
 
 void close(Reactor& reactor, const int fd)
