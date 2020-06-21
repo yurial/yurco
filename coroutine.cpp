@@ -21,7 +21,7 @@ void Coroutine::entry() noexcept
         {
         if (!get_exception())
             {
-            yurco::set_coroutine(*this);
+            yurco::set_coroutine(this);
             m_func(*this);
             }
         }
@@ -57,7 +57,7 @@ void Coroutine::operator() (const std::nothrow_t&) noexcept
         unistd::ucontext retpoint;
         unistd::ucontext* tmp = &retpoint;
         swap_guard<unistd::ucontext*> guard(m_retpoint, tmp);
-        Coroutine& old_coro = yurco::get_coroutine();
+        Coroutine* old_coro = yurco::get_coroutine();
         yurco::swapcontext(&retpoint, &m_context);
         yurco::set_coroutine(old_coro);
         }

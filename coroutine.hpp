@@ -111,7 +111,7 @@ void Coroutine::yield()
     assert(is_running());
     assert(!std::current_exception());
     yurco::swapcontext(&m_context, m_retpoint);
-    yurco::set_coroutine(*this);
+    yurco::set_coroutine(this);
     rethrow();
     }
 

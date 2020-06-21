@@ -49,7 +49,7 @@ void Reactor::run(const size_t batch_size, const size_t events_at_once) noexcept
     m_terminate.store(false, std::memory_order_relaxed);
     eventfd_t wakeup_value = 0;
     ::eventfd_read(m_epoll_wakeup, &wakeup_value);
-    yurco::set_reactor(*this);
+    yurco::set_reactor(this);
     for (;;)
         {
         bool has_ready = process_ready(batch_size);

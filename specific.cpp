@@ -24,7 +24,7 @@ void init(const size_t stack_size, const bool protect_stack) noexcept
         if (0 != ::pthread_key_create(&coro_key, nullptr))
             abort();
         default_reactor = std::make_unique<Reactor>(stack_size, protect_stack);
-        set_reactor(*default_reactor);
+        set_reactor(default_reactor.get());
         };
     std::call_once(once_flag, init_once);
     }

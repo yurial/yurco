@@ -6,11 +6,11 @@
 
 namespace yurco
 {
-__inline__  void terminate() noexcept { get_reactor().terminate(); }
+__inline__  void terminate() noexcept { get_reactor()->terminate(); }
 template <class Func, class... Args>
-__inline__  void async(Func&& func, Args&&... args) noexcept { get_reactor().async(std::forward<Func>(func), std::forward<Args>(args)...); }
-__inline__  void yield() { get_coroutine().yield(); }
-__inline__  void suspend(const int fd, int events) { get_reactor().suspend(get_coroutine(), fd, events); }
+__inline__  void async(Func&& func, Args&&... args) noexcept { get_reactor()->async(std::forward<Func>(func), std::forward<Args>(args)...); }
+__inline__  void yield() { get_coroutine()->yield(); }
+__inline__  void suspend(const int fd, int events) { get_reactor()->suspend(*get_coroutine(), fd, events); }
 } // namespace yurco
 
 #endif
