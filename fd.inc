@@ -59,7 +59,7 @@ fd fd::accept(yurco::Coroutine& coro, int flags)
 
 fd fd::accept(yurco::Coroutine& coro, ::sockaddr* addr, socklen_t* addrlen, int flags)
     {
-    return fd::nodup(reactor(), yurco::accept(reactor(), coro, *this, addr, addrlen, flags));
+    return fd::nodup(reactor(), yurco::accept4(reactor(), coro, *this, addr, addrlen, flags));
     }
 
 size_t fd::read(yurco::Coroutine& coro, void* buf, size_t count)

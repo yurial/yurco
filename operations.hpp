@@ -19,7 +19,8 @@ size_t  read(const std::nothrow_t&, Reactor& reactor, Coroutine& coro, const int
 size_t  write(const std::nothrow_t&, Reactor& reactor, Coroutine& coro, const int fd, const void* const buf, const size_t count) __attribute__((warn_unused_result));
 
 int     connect(const std::nothrow_t&, Reactor& reactor, Coroutine& coro, const int fd, const struct sockaddr* const addr, const socklen_t addrlen);
-int     accept(const std::nothrow_t&, Reactor& reactor, Coroutine& coro, const int fd, ::sockaddr* addr, socklen_t* addrlen, const int flags = 0) __attribute__((warn_unused_result));
+int     accept(const std::nothrow_t&, Reactor& reactor, Coroutine& coro, const int fd, ::sockaddr* addr, socklen_t* addrlen) __attribute__((warn_unused_result));
+int     accept4(const std::nothrow_t&, Reactor& reactor, Coroutine& coro, const int fd, ::sockaddr* addr, socklen_t* addrlen, const int flags) __attribute__((warn_unused_result));
 ssize_t recv(const std::nothrow_t&, Reactor& reactor, Coroutine& coro, const int fd, void* const buf, const size_t len, const int flags);
 ssize_t recvfrom(const std::nothrow_t&, Reactor& reactor, Coroutine& coro, const int fd, void* const buf, const size_t len, const int flags, struct sockaddr* const src_addr, socklen_t* const addrlen) __attribute__((warn_unused_result));
 ssize_t recvmsg(const std::nothrow_t&, Reactor& reactor, Coroutine& coro, const int fd, struct msghdr* const msg, const int flags) __attribute__((warn_unused_result));
@@ -39,7 +40,8 @@ size_t  read(Reactor& reactor, Coroutine& coro, const int fd, void* const buf, c
 size_t  write(Reactor& reactor, Coroutine& coro, const int fd, const void* const buf, const size_t count) __attribute__((warn_unused_result));
 
 void    connect(Reactor& reactor, Coroutine& coro, const int fd, const struct sockaddr* const addr, const socklen_t addrlen);
-int     accept(Reactor& reactor, Coroutine& coro, const int fd, ::sockaddr* addr, socklen_t* addrlen, const int flags = 0) __attribute__((warn_unused_result));
+int     accept(Reactor& reactor, Coroutine& coro, const int fd, ::sockaddr* addr, socklen_t* addrlen) __attribute__((warn_unused_result));
+int     accept4(Reactor& reactor, Coroutine& coro, const int fd, ::sockaddr* addr, socklen_t* addrlen, const int flags) __attribute__((warn_unused_result));
 ssize_t recv(Reactor& reactor, Coroutine& coro, const int fd, void* const buf, const size_t len, const int flags);
 ssize_t recvfrom(Reactor& reactor, Coroutine& coro, const int fd, void* const buf, const size_t len, const int flags, struct sockaddr* const src_addr, socklen_t* const addrlen) __attribute__((warn_unused_result));
 ssize_t recvmsg(Reactor& reactor, Coroutine& coro, const int fd, struct msghdr* const msg, const int flags) __attribute__((warn_unused_result));

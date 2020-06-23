@@ -1,0 +1,44 @@
+includes:
+    - stdlib.h
+    - dlfcn.h
+    - sys/types.h
+    - sys/socket.h
+    - poll.h
+
+types:
+    - void
+    - int
+    - size_t
+    - ssize_t
+    - fd_set
+    - nfds_t
+    - timeval
+    - timespec
+    - sigset_t
+    - pollfd
+    - epoll_event
+    - sockaddr
+    - socklen_t
+    - msghdr
+
+functions:
+    select:         {return: "int", nfds: "int", readfds: "fd_set*", writefds: "fd_set*", exceptfds: "fd_set*", timeout: "struct timeval*" }
+    pselect:        {return: "int", nfds: "int", readfds: "fd_set*", writefds: "fd_set*", exceptfds: "fd_set*", timeout: "const struct timespec*", sigmask: "const sigset_t*"}
+    poll:           {return: "int", fds: "struct pollfd*", nfds: "nfds_t", timeout: "int"}
+    ppoll:          {return: "int", fds: "struct pollfd*", nfds: "nfds_t", tmo_p: "const struct timespec*", sigmask: "const sigset_t*"}
+    epoll_wait:     {return: "int", epfd: "int", events: "struct epoll_event*", maxevents: "int", timeout: "int"}
+    epoll_pwait:    {return: "int", epfd: "int", events: "struct epoll_event*", maxevents: "int", timeout: "int", sigmask: "const sigset_t*"}
+
+    close:          {need_coroutine: false, return: "int", fd: "int"}
+    read:           {return: "ssize_t", fd: "int", buf: "void*", count: "size_t"}
+    write:          {return: "ssize_t", fd: "int", buf: "const void*", count: "size_t"}
+
+    connect:        {return: "int", sockfd: "int", addr: "const struct sockaddr*", addrlen: "socklen_t"}
+    accept:         {return: "int", sockfd: "int", addr: "struct sockaddr*", addrlen: "socklen_t*"}
+    accept4:        {return: "int", sockfd: "int", addr: "struct sockaddr*", addrlen: "socklen_t*", flags: "int"}
+    recv:           {return: "ssize_t", sockfd: "int", buf: "void*", len: "size_t", flags: "int"}
+    recvfrom:       {return: "ssize_t", sockfd: "int", buf: "void*", len: "size_t", flags: "int", src_addr: "struct sockaddr*", addrlen: "socklen_t*"}
+    recvmsg:        {return: "ssize_t", sockfd: "int", msg: "struct msghdr*", flags: "int"}
+    send:           {return: "ssize_t", sockfd: "int", msg: "const void*", len: "size_t", flags: "int"}
+    sendto:         {return: "ssize_t", sockfd: "int", msg: "const void*", len: "size_t", flags: "int", to: "const struct sockaddr*", tolen: socklen_t}
+    sendmsg:        {return: "ssize_t", sockfd: "int", msg: "const struct msghdr*", flags: "int"}

@@ -6,24 +6,22 @@
 
 namespace yurco
 {
-int select(const std::nothrow_t&, Reactor& reactor, Coroutine& coro, int nfds, fd_set* readfds, fd_set* writefds, fd_set* exceptfds, const struct timeval* const timeout)
+static timespec timeval2timespec(const timeval& tv)
     {
-    const struct timespec ts{timeout->tv_sec, timeout->tv_usec};
-    return pselect(std::nothrow, reactor, coro, nfds, readfds, writefds, exceptfds, &ts, nullptr);
+    return timespec{tv.tv_sec, tv.tv_usec * 1000};
     }
 
-int pselect(const std::nothrow_t&, Reactor& reactor, Coroutine& coro, int nfds, fd_set* readfds, fd_set* writefds, fd_set* exceptfds, const struct timespec* const timeout, const sigset_t* const sigmask)
+static int timespec2msec(const timespec& ts)
     {
-    //TODO:
+    return ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
     }
 
-int poll(const std::nothrow_t&, Reactor& reactor, Coroutine& coro, struct pollfd* fds, nfds_t nfds, int timeout)
+static timespec msec2timespec(const int msec)
     {
-    const struct timespec ts{timeout/1000, (timeout%1000)*1000000L};
-    return ppoll(std::nothrow, reactor, coro, fds, nfds, &ts, nullptr);
+    return timespec{msec/1000, (msec%1000)*1000000L};
     }
 
-int poll2epoll_event(int poll_events)
+static int poll2epoll_event(int poll_events)
     {
     int events = 0;
     if (poll_events & POLLIN)
@@ -49,9 +47,101 @@ int poll2epoll_event(int poll_events)
     return events;
     }
 
+static int epoll2poll_event(int epoll_events)
+    {
+    int events = 0;
+    if (epoll_events & EPOLLIN)
+        events |= POLLIN;
+    if (epoll_events & EPOLLOUT)
+        events |= POLLOUT;
+    if (epoll_events & EPOLLPRI)
+        events |= POLLPRI;
+    if (epoll_events & EPOLLRDHUP)
+        events |= POLLRDHUP;
+    if (epoll_events & EPOLLERR)
+        events |= POLLERR;
+    if (epoll_events & EPOLLHUP)
+        events |= POLLHUP;
+    if (epoll_events & EPOLLRDNORM)
+        events |= POLLRDNORM;
+    if (epoll_events & EPOLLRDBAND)
+        events |= POLLRDBAND;
+    if (epoll_events & EPOLLWRNORM)
+        events |= POLLWRNORM;
+    if (epoll_events & EPOLLWRBAND)
+        events |= POLLWRBAND;
+    return events;
+    }
+
+int select(const std::nothrow_t&, Reactor& reactor, Coroutine& coro, int nfds, fd_set* readfds, fd_set* writefds, fd_set* exceptfds, const struct timeval* const timeout)
+    {
+    if (timeout)
+        {
+        const struct timespec ts = timeval2timespec(*timeout);
+        return pselect(std::nothrow, reactor, coro, nfds, readfds, writefds, exceptfds, &ts, nullptr);
+        }
+    return pselect(std::nothrow, reactor, coro, nfds, readfds, writefds, exceptfds, nullptr, nullptr);
+    }
+
+int pselect(const std::nothrow_t&, Reactor& reactor, Coroutine& coro, int nfds, fd_set* readfds, fd_set* writefds, fd_set* exceptfds, const struct timespec* const tmo_p, const sigset_t* const sigmask)
+    {
+    const int timeout = (tmo_p == nullptr)? -1 : timespec2msec(*tmo_p);
+    std::unordered_map<int, int> fd_events_map;
+    for (size_t i = 0; i < FD_SETSIZE; ++i)
+        if (FD_ISSET(i, readfds))
+            fd_events_map[i] |= EPOLLIN;
+    for (size_t i = 0; i < FD_SETSIZE; ++i)
+        if (FD_ISSET(i, writefds))
+            fd_events_map[i] |= EPOLLOUT;
+    for (size_t i = 0; i < FD_SETSIZE; ++i)
+        if (FD_ISSET(i, exceptfds))
+            fd_events_map[i] |= EPOLLERR;
+    FD_ZERO(readfds);
+    FD_ZERO(writefds);
+    FD_ZERO(exceptfds);
+    unistd::fd epfd = unistd::fd::nodup(unistd::epoll_create());
+    for (const auto& fd_events : fd_events_map)
+        unistd::epoll_add(epfd, fd_events.first, fd_events.second, fd_events.first);
+    std::vector<epoll_event> events(fd_events_map.size());
+    const int nready = epoll_pwait(std::nothrow, reactor, coro, epfd, events.data(), events.size(), timeout, sigmask);
+    if (nready < 0)
+        return nready;
+    int result = 0;
+    for (size_t i = 0; i < nready; ++i)
+        {
+        const auto ev = events[i].events;
+        const int fd = events[i].data.fd;
+        if (ev & EPOLLIN)
+            {
+            FD_SET(fd, readfds);
+            ++result;
+            }
+        if (ev & EPOLLOUT)
+            {
+            FD_SET(fd, writefds);
+            ++result;
+            }
+        if (ev & EPOLLERR)
+            {
+            FD_SET(fd, exceptfds);
+            ++result;
+            }
+        }
+    epfd.close(std::nothrow);
+    return result;
+    }
+
+int poll(const std::nothrow_t&, Reactor& reactor, Coroutine& coro, struct pollfd* fds, nfds_t nfds, int timeout)
+    {
+    if (timeout == -1)
+        return ppoll(std::nothrow, reactor, coro, fds, nfds, nullptr, nullptr);
+    const struct timespec ts = msec2timespec(timeout);
+    return ppoll(std::nothrow, reactor, coro, fds, nfds, &ts, nullptr);
+    }
+
 int ppoll(const std::nothrow_t&, Reactor& reactor, Coroutine& coro, struct pollfd* fds, nfds_t nfds, const struct timespec* const tmo_p, const sigset_t* const sigmask)
     {
-    const int timeout = (tmo_p == nullptr)? -1 : (tmo_p->tv_sec * 1000 + tmo_p->tv_nsec / 1000000);
+    const int timeout = (tmo_p == nullptr)? -1 : timespec2msec(*tmo_p);
     std::unordered_map<int, pollfd*> index; // fd -> pollfd*
     index.reserve(nfds);
     unistd::fd epfd = unistd::fd::nodup(unistd::epoll_create());
@@ -68,7 +158,7 @@ int ppoll(const std::nothrow_t&, Reactor& reactor, Coroutine& coro, struct pollf
     for (size_t i = 0; i < nready; ++i)
         {
         const auto& event = events[i];
-        index[event.data.fd]->revents = event.events;
+        index[event.data.fd]->revents = epoll2poll_event(event.events);
         }
     epfd.close(std::nothrow);
     return nready;
@@ -152,7 +242,12 @@ int connect(const std::nothrow_t&, Reactor& reactor, Coroutine& coro, const int 
         }
     }
 
-int accept(const std::nothrow_t&, Reactor& reactor, Coroutine& coro, const int fd, ::sockaddr* addr, socklen_t* addrlen, const int flags)
+int accept(const std::nothrow_t&, Reactor& reactor, Coroutine& coro, const int fd, ::sockaddr* addr, socklen_t* addrlen)
+    {
+    return accept4(std::nothrow, reactor, coro, fd, addr, addrlen, 0);
+    }
+
+int accept4(const std::nothrow_t&, Reactor& reactor, Coroutine& coro, const int fd, ::sockaddr* addr, socklen_t* addrlen, const int flags)
     {
     for (;;)
         {
@@ -327,9 +422,17 @@ void connect(Reactor& reactor, Coroutine& coro, const int fd, const struct socka
         throw std::system_error(errno, std::system_category(), "connect");
     }
 
-int accept(Reactor& reactor, Coroutine& coro, const int fd, ::sockaddr* addr, socklen_t* addrlen, const int flags)
+int accept(Reactor& reactor, Coroutine& coro, const int fd, ::sockaddr* addr, socklen_t* addrlen)
     {
-    const int client = accept(std::nothrow, reactor, coro, fd, addr, addrlen, flags);
+    const int client = accept(std::nothrow, reactor, coro, fd, addr, addrlen);
+    if (-1 == client)
+        throw std::system_error(errno, std::system_category(), "accept");
+    return client;
+    }
+
+int accept4(Reactor& reactor, Coroutine& coro, const int fd, ::sockaddr* addr, socklen_t* addrlen, const int flags)
+    {
+    const int client = accept4(std::nothrow, reactor, coro, fd, addr, addrlen, flags);
     if (-1 == client)
         throw std::system_error(errno, std::system_category(), "accept4");
     return client;

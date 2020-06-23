@@ -47,9 +47,9 @@ using fds_container = std::unordered_map<int, fd_data>;
 std::atomic<bool>   m_terminate;
 lock_type           m_fd_mutex;
 lock_type           m_epoll_mutex;
+fds_container       m_fds;
 unistd::fd          m_epoll_wakeup;
 unistd::fd          m_epollfd;
-fds_container       m_fds;
 SimpleScheduler     m_scheduler;
 
 inline  void    nothing_to_do() noexcept;
